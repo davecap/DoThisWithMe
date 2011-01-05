@@ -83,13 +83,6 @@ class AjaxNextEventHandler(BaseHandler):
             self.response.out.write(self._next_event())
 
 
-class RPCMethods:
-    """ Defines the methods that can be RPCed.
-    NOTE: Do not allow remote callers access to private/protected "_*" methods.
-    """
-
-
-
 def main():
     application = webapp.WSGIApplication([
                         ('/', IndexHandler),
