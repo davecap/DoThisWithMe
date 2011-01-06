@@ -5,6 +5,8 @@ import os
 import datetime
 
 import facebook
+from django.utils import simplejson
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.ext import db
@@ -64,9 +66,10 @@ class BaseHandler(webapp.RequestHandler):
 class IndexHandler(BaseHandler):
     def get(self):
         path = os.path.join(os.path.dirname(__file__), "templates/index.html")
-        args = dict(current_user=self.current_user,
-                    facebook_app_id=FACEBOOK_APPLICATION_ID, facebook_api_key=FACEBOOK_API_KEY)
+        args = dict(current_user=self.current_user, facebook_app_id=FACEBOOK_APPLICATION_ID, facebook_api_key=FACEBOOK_API_KEY)
         self.response.out.write(template.render(path, args))
+
+# TODO: Consolidate these AJAX handlers?? restrict to AJAX calls?
 
 class AjaxNextEventHandler(BaseHandler):
     
@@ -83,10 +86,41 @@ class AjaxNextEventHandler(BaseHandler):
             self.response.out.write(self._next_event())
 
 
+class AjaxFriendListHandler(BaseHandler):
+
+    def _friend_list(self):
+        friends = facebook.GraphAPI(self.current_user.access_token).get_connections("me", "friends")
+        if friends and 'data' in friends:
+            return simplejson.dumps([ { 'value':f['id'], 'label':f['name'] } for f in friends['data'] ])
+        else:
+            return simplejson.dumps([])
+            
+    def get(self):
+        # There must be a user logged in!
+        if self.current_user is None:
+            self.error(403) # access denied
+        else:
+            self.response.out.write(self._friend_list())
+
+class AjaxAddFriendHandler(BaseHandler):
+
+    def _get_friend_info(self, friend_id):
+        friend = facebook.GraphAPI(self.current_user.access_token).get_object(friend_id,fields='id,name,picture')
+        return simplejson.dumps({ "name": friend["name"], "picture": friend["picture"] })
+
+    def get(self):
+        # There must be a user logged in!
+        if self.current_user is None:
+            self.error(403) # access denied
+        else:
+            self.response.out.write(self._get_friend_info(self.request.get("id")))
+               
 def main():
     application = webapp.WSGIApplication([
                         ('/', IndexHandler),
                         ('/ajax/next_event', AjaxNextEventHandler),
+                        ('/ajax/friend_list', AjaxFriendListHandler),
+                        ('/ajax/add_friend', AjaxAddFriendHandler),
                     ], debug=True)
     wsgiref.handlers.CGIHandler().run(application)
     #     util.run_wsgi_app(app)

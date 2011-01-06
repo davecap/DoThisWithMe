@@ -1,10 +1,6 @@
 <!doctype html>  
 
-<!--[if lt IE 7 ]> <html lang="en" class="no-js ie6"> <![endif]-->
-<!--[if IE 7 ]>    <html lang="en" class="no-js ie7"> <![endif]-->
-<!--[if IE 8 ]>    <html lang="en" class="no-js ie8"> <![endif]-->
-<!--[if IE 9 ]>    <html lang="en" class="no-js ie9"> <![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -19,8 +15,7 @@
 
   <link rel="stylesheet" href="/static/css/style.css?v=2">
   <link rel="stylesheet" href="/static/css/960.css?v=2">
-  <script src="/static/js/libs/modernizr-1.6.min.js"></script>
-
+  <link rel="stylesheet" href="/static/css/ui-lightness/jquery-ui-1.8.7.custom.css?v=2">
 </head>
 
 <body>
@@ -39,6 +34,7 @@
         e.async = true;
         document.getElementById('fb-root').appendChild(e);
       }());
+      
     </script>
     
     <div class="container_24">
@@ -53,7 +49,7 @@
                   
                 {% endif %}
                 
-                <fb:login-button autologoutlink="true" perms="publish_stream,create_event,rsvp_event,user_events,friends_events,user_interests,friends_interests,user_likes,friends_likes,user_location,friends_location,read_friendlists"></fb:login-button>
+                <fb:login-button autologoutlink="true" perms="user_events,friends_events,user_interests,friends_interests,user_likes,friends_likes,user_location,read_friendlists"></fb:login-button>
             </div>
         </div>
         
@@ -62,21 +58,11 @@
         
         <div class="grid_12">
             <img src="/static/img/step1.png" /><br />
-            {% if current_user %}
-            <br />
-            <input type="text" value="type a friend's name" />
-                    Hello current user! <br />
-                  
-                  <div style="padding: 10px;">
-                    <fb:request-form method="post" action="index.html" content="hey" type="sample" invite="true">
-                      <div class="clearfix" style="padding-bottom: 10px;">
-                        <fb:multi-friend-selector condensed="true" style="width: 200px;" />
-                      </div>
-                      <fb:request-form-submit />
-                    </fb:request-form>
-                  </div>
-                                    
+            {% if current_user %}                
+                <input id="add_friends" placeholder="Type a friend's name"/>
+                <div id="selected_friend_list"></div>
             {% endif %}             
+
         </div>
         <div class="grid_12">
             <img src="/static/img/step2.png" />&nbsp;&nbsp;<a href="#" id="get-next-event">I don't want to do this, show me another!</a><br />
@@ -98,11 +84,12 @@
     </div>
 
 
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="/static/js/libs/jquery-1.4.2.js"%3E%3C/script%3E'))</script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/static/js/libs/jquery-1.4.4.js"%3E%3C/script%3E'))</script>
+  <script src="/static/js/libs/jquery-ui-1.8.7.custom.min.js"></script>
+  <script src="/static/js/plugins.js"></script>
   
   {% if current_user %}
-  
       <script type="text/javascript">
         $(document).ready(function() { 
             $('#event').load('/ajax/next_event');
@@ -110,29 +97,29 @@
                 $('#event').load('/ajax/next_event');
             });
             
-          });
+            function loadFriendAutocomplete(data) {
+                var friendList = data;
+                $( "#add_friends" ).autocomplete({
+                    source: friendList,
+                    close: function(event, ui) { $("#add_friends").val(''); $("#add_friends").blur(); return false; }
+                });
+
+                $( "#add_friends" ).bind("autocompleteselect", function(event, ui) {
+                    // send an ajax request to get friend's information
+                    $.getJSON('/ajax/add_friend', {id:ui.item.value}, function(data) {
+                        // add friend (with profile pic) to list below input box
+                        // get friend's information
+                        // blank the event screen
+                        $('#selected_friend_list').append('<div><img src=\''+data.picture+'\'/>'+data.name+'</div>');
+                        // call for a new event
+                    });
+                });
+            }
+
+            $.getJSON('/ajax/friend_list', loadFriendAutocomplete);
+        });
       </script>
-
   {% endif %}
-  
-  <!-- scripts concatenated and minified via ant build script-->
-  <script src="/static/js/plugins.js"></script>
-  <script src="/static/js/script.js"></script>
-  <script src="/static/js/jquery.fbfs.js"></script>
-  
-  <!-- end concatenated and minified scripts-->
-  
-  
-  <!--[if lt IE 7 ]>
-    <script src="js/libs/dd_belatedpng.js"></script>
-    <script> DD_belatedPNG.fix('img, .png_bg'); </script>
-  <![endif]-->
-
-  <!-- yui profiler and profileviewer - remove for production -->
-  <!-- <script src="js/profiling/yahoo-profiling.min.js"></script> -->
-  <!-- <script src="js/profiling/config.js"></script> -->
-  <!-- end profiling code -->
-
 
   <script>
    var _gaq = [['_setAccount', 'UA-20560502-1'], ['_trackPageview']];
