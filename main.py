@@ -69,51 +69,50 @@ class IndexHandler(BaseHandler):
         args = dict(current_user=self.current_user, facebook_app_id=FACEBOOK_APPLICATION_ID, facebook_api_key=FACEBOOK_API_KEY)
         self.response.out.write(template.render(path, args))
 
-# TODO: Consolidate these AJAX handlers?? restrict to AJAX calls?
-
-class AjaxNextEventHandler(BaseHandler):
+class AjaxHandler(BaseHandler):
+    def process(self):
+        raise NotImplementedError()
     
-    def _next_event(self):
+    def get(self):
+        # must be logged in
+        if self.current_user is None:
+            return self.error(403)
+        # must be ajax request
+        if 'X-Requested-With' not in self.request.headers.keys() or self.request.headers['X-Requested-With'] != 'XMLHttpRequest':
+            return self.error(403)
+        self.process()
+
+class AjaxNextEventHandler(AjaxHandler):
+    def get_user_info(self):
+        g = facebook.GraphAPI(self.current_user.access_token)
+        interests = g.get_connections("me", "interests")
+        music = g.get_connections("me", "music")
+        books = g.get_connections("me", "books")
+        movies = g.get_connections("me", "movies")
+        television = g.get_connections("me", "television")
+        albums = g.get_connections("me", "albums")
+        #likes = g.get_connections("me", "likes")
+        return '%s<br />%s<br />%s<br />%s<br />%s<br />%s<br />' % (interests, music, books, movies, albums, television)
+        
+    def process(self):
         # get an event for the user and return it as an HTML partial
         t = str(datetime.datetime.now())
-        return '<b>Next Event for user %s</b><br />%s' % (self.current_user.name, t)
-    
-    def get(self):
-        # There must be a user logged in!
-        if self.current_user is None:
-            self.error(403) # access denied
-        else:
-            self.response.out.write(self._next_event())
+        info = self.get_user_info()
+        self.response.out.write('<b>Next Event for user %s</b><br />%s<br />%s' % (self.current_user.name, t, info))
 
-
-class AjaxFriendListHandler(BaseHandler):
-
-    def _friend_list(self):
+class AjaxFriendListHandler(AjaxHandler):
+    def process(self):
+        # TODO: add exception handling and proper logging of errors
         friends = facebook.GraphAPI(self.current_user.access_token).get_connections("me", "friends")
         if friends and 'data' in friends:
-            return simplejson.dumps([ { 'value':f['id'], 'label':f['name'] } for f in friends['data'] ])
-        else:
-            return simplejson.dumps([])
-            
-    def get(self):
-        # There must be a user logged in!
-        if self.current_user is None:
-            self.error(403) # access denied
-        else:
-            self.response.out.write(self._friend_list())
+            res = simplejson.dumps([ { 'value':f['id'], 'label':f['name'] } for f in friends['data'] ])
+            self.response.out.write(res)
 
-class AjaxAddFriendHandler(BaseHandler):
-
-    def _get_friend_info(self, friend_id):
-        friend = facebook.GraphAPI(self.current_user.access_token).get_object(friend_id,fields='id,name,picture')
-        return simplejson.dumps({ "name": friend["name"], "picture": friend["picture"] })
-
-    def get(self):
-        # There must be a user logged in!
-        if self.current_user is None:
-            self.error(403) # access denied
-        else:
-            self.response.out.write(self._get_friend_info(self.request.get("id")))
+class AjaxAddFriendHandler(AjaxHandler):
+    def process(self):
+        # TODO: add exception handling and proper logging of errors
+        friend = facebook.GraphAPI(self.current_user.access_token).get_object(self.request.get("id"),fields='id,name,picture')
+        self.response.out.write(simplejson.dumps({ "name": friend["name"], "picture": friend["picture"] }))
                
 def main():
     application = webapp.WSGIApplication([
