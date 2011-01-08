@@ -1,4 +1,4 @@
-<!doctype html>  
+<!doctype html>
 
 <html lang="en">
 <head>
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/static/css/ui-lightness/jquery-ui-1.8.7.custom.css?v=2">
 </head>
 
-<body>
+<body onload="initGeolocation();">
     <div id="fb-root"></div>
     <script>
       window.fbAsyncInit = function() {
@@ -46,7 +46,7 @@
                 {% if current_user %}
                   <p><a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture?type=square"/></a></p>
                   <p>Hello, {{ current_user.name|escape }}</p>
-                  
+                  <p>Finding an event in: <span id="location">{{ current_user.location|escape }}</span> <a href="#">change</a></p>
                 {% endif %}
                 
                 <fb:login-button autologoutlink="true" perms="user_events,friends_events,user_interests,friends_interests,user_likes,friends_likes,user_location,read_friendlists"></fb:login-button>
@@ -60,7 +60,13 @@
             <img src="/static/img/step1.png" /><br />
             {% if current_user %}                
                 <input id="add_friends" placeholder="Type a friend's name"/>
-                <div id="selected_friend_list"></div>
+                <div id="selected_friend_list">
+                    {% if selected_friends %}
+                        {% for f in selected_friends %}
+                            <div id="friend-{{ f.id }}"><img src="{{ f.picture }}"/>{{ f.name }}<a href="#" id="remove-friend-{{ f.id }}">remove</a></div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
             {% endif %}             
 
         </div>
@@ -97,6 +103,11 @@
                 $('#event').load('/ajax/next_event');
             });
             
+            
+            function removeSelectedFriend(data) {
+                $("div#friend-"+data.id).remove();
+            }
+            
             function loadFriendAutocomplete(data) {
                 var friendList = data;
                 $( "#add_friends" ).autocomplete({
@@ -110,14 +121,46 @@
                         // add friend (with profile pic) to list below input box
                         // get friend's information
                         // blank the event screen
-                        $('#selected_friend_list').append('<div><img src=\''+data.picture+'\'/>'+data.name+'</div>');
+                        $('#selected_friend_list').append('<div id="friend-'+data.id+'"><img src=\"'+data.picture+'\"/>'+data.name+'<a href="#" id="remove-friend-'+data.id+'">remove</a></div>');
+                         $('#remove-friend-'+data.id).click(function(){
+                             $.getJSON('/ajax/remove_friend', {id:data.id}, removeSelectedFriend);
+                         });
+                         
                         // call for a new event
                     });
                 });
             }
 
             $.getJSON('/ajax/friend_list', loadFriendAutocomplete);
+            
+            {% if selected_friends %}
+                {% for f in selected_friends %}
+            $('#remove-friend-{{ f.id }}').click(function(){
+                $.getJSON('/ajax/remove_friend', {id:{{ f.id }}}, removeSelectedFriend);
+            });
+                {% endfor %}
+            {% endif %}
         });
+        
+        // GEOLOCATION
+        
+        function initGeolocation()
+        {
+             if( navigator.geolocation )
+             {
+                  navigator.geolocation.getCurrentPosition(setLocation);
+             }
+        }
+
+        function setLocation(position)
+        {
+            // $.getJSON('/ajax/set_location', {latitude:position.coords.latitude, longitude:position.coords.longitude, city:position.address.city, country:position.address.country, postal_code:position.address.postal_code}, function(data) {
+            //         alert("New Location!"+data);
+            //     });
+            $.getJSON('/ajax/set_location', {latitude:position.coords.latitude, longitude:position.coords.longitude}, function(data) {
+                    alert("New Location!"+data);
+                });
+        }
       </script>
   {% endif %}
 
