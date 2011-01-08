@@ -52,9 +52,7 @@ class UserEvent(db.Model):
     # TODO: async?
     def remove_friend(self, user_id):
         if user_id in self.friend_ids:
-            logging.error(self.friend_ids)
             self.friend_ids.remove(user_id)
-            logging.error(self.friend_ids)
             self.put()
     
 class UserProfile(db.Expando):

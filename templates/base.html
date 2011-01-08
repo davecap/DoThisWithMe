@@ -46,7 +46,7 @@
                 {% if current_user %}
                   <p><a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture?type=square"/></a></p>
                   <p>Hello, {{ current_user.name|escape }}</p>
-                  <p>Finding an event in: <span id="location">{{ current_user.location|escape }}</span> <a href="#">change</a></p>
+                  <p>Finding an event in: <span id="location">{{ current_user.location|escape }}</span></p>
                 {% endif %}
                 
                 <fb:login-button autologoutlink="true" perms="user_events,friends_events,user_interests,friends_interests,user_likes,friends_likes,user_location,read_friendlists"></fb:login-button>
@@ -158,7 +158,7 @@
             //         alert("New Location!"+data);
             //     });
             $.getJSON('/ajax/set_location', {latitude:position.coords.latitude, longitude:position.coords.longitude}, function(data) {
-                    alert("New Location!"+data);
+                    // TODO: update location span if we get something
                 });
         }
       </script>
