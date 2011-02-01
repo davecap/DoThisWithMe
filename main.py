@@ -112,7 +112,7 @@ class BaseHandler(webapp.RequestHandler):
                                 name=profile["name"],
                                 profile_url=profile["link"],
                                 picture=profile["picture"],
-                                location=profile["location"],
+                                location=location,
                                 access_token=cookie["access_token"])
                     user.put()
                 elif user.access_token != cookie["access_token"]:
