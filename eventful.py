@@ -52,6 +52,7 @@ If you don't have an application key, you can request one:
         try:
             response = _parse_json(file.read())
             #return simplejson.loads(fh.read())
+            return response
         finally:
             file.close()
         if response.get("error"):

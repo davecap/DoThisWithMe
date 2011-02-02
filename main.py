@@ -35,8 +35,10 @@ class User(db.Model):
     access_token = db.StringProperty()
     
     def get_location(self):
-        # TODO: look for UserProfile location data
-        pass
+        if self.location:
+            return self.location
+        else:
+            return 'Toronto'
 
 class UserEvent(db.Model):
     id = db.StringProperty(required=True)
@@ -106,7 +108,8 @@ class BaseHandler(webapp.RequestHandler):
                     try:
                         # FB locations are in 'City, State' format
                         location = profile["location"]["name"]
-                    except:
+                    except Exception, e:
+                        logging.error(e)
                         location = None
                     
                     user = User(key_name=str(profile["id"]),
@@ -166,7 +169,7 @@ class AjaxNextEventHandler(AjaxHandler):
         
         api = eventful.API('JSmFxgTgZ3kHsfTb')
         # api.login('username', 'password')
-        events = api.call('/events/search', q='music', l='Toronto')
+        events = api.call('/events/search', q='music', l=self.current_user.get_location())
         
         for event in random.shuffle(events['events']['event']):
             return "%s at %s" % (event['title'], event['venue_name'])
