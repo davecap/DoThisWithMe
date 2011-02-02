@@ -166,13 +166,14 @@ class AjaxNextEventHandler(AjaxHandler):
         #     # TODO
         #     pass
         
-        
         api = eventful.API('JSmFxgTgZ3kHsfTb')
-        # api.login('username', 'password')
-        events = api.call('/events/search', q='music', l=self.current_user.get_location())
-        
-        for event in random.shuffle(events['events']['event']):
-            return "%s at %s" % (event['title'], event['venue_name'])
+        api_data = api.call('/events/search', q='music', l=self.current_user.get_location())
+        try:
+            events = api_data['events']['event']
+            random.shuffle(events)
+            return "%s at %s" % (events[0]['title'], events[0]['venue_name'])
+        except:
+            return "Couldn't find any events"
         
         #g = facebook.GraphAPI(self.current_user.access_token)
         #interests = g.get_connections("me", "interests")

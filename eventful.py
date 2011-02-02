@@ -9,6 +9,9 @@ __author__    = "Edward O'Connor <ted@eventful.com>"
 __copyright__ = "Copyright 2005, 2006 Eventful Inc."
 __license__   = "MIT"
 
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+
 import md5
 import urllib
 
@@ -50,14 +53,14 @@ If you don't have an application key, you can request one:
         
         file = urllib.urlopen(url)
         try:
-            response = _parse_json(file.read())
-            #return simplejson.loads(fh.read())
-            return response
+            return _parse_json(file.read())
         finally:
             file.close()
         if response.get("error"):
             raise APIError("Unable to parse API response! Error: %s. %s" % (response["error"]["type"], response["error"]["message"]))
-                
+        
+        return []
+        
         # Handle the response
         # status = int(response['status'])
         # if status == 200:
