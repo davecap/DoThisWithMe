@@ -4,7 +4,9 @@ import wsgiref.handlers
 import os
 import datetime
 import logging
+import random
 
+import eventful
 import facebook
 from django.utils import simplejson
 
@@ -161,15 +163,23 @@ class AjaxNextEventHandler(AjaxHandler):
         #     # TODO
         #     pass
         
-        g = facebook.GraphAPI(self.current_user.access_token)
-        interests = g.get_connections("me", "interests")
-        music = g.get_connections("me", "music")
-        books = g.get_connections("me", "books")
-        movies = g.get_connections("me", "movies")
-        television = g.get_connections("me", "television")
-        albums = g.get_connections("me", "albums")
-        #likes = g.get_connections("me", "likes")
-        return '%s<br />%s<br />%s<br />%s<br />%s<br />%s<br />' % (interests, music, books, movies, albums, television)
+        
+        api = eventful.API('JSmFxgTgZ3kHsfTb')
+        # api.login('username', 'password')
+        events = api.call('/events/search', q='music', l='Toronto')
+        
+        for event in random.shuffle(events['events']['event']):
+            return "%s at %s" % (event['title'], event['venue_name'])
+        
+        #g = facebook.GraphAPI(self.current_user.access_token)
+        #interests = g.get_connections("me", "interests")
+        #music = g.get_connections("me", "music")
+        #books = g.get_connections("me", "books")
+        #movies = g.get_connections("me", "movies")
+        #television = g.get_connections("me", "television")
+        #albums = g.get_connections("me", "albums")
+        ##likes = g.get_connections("me", "likes")
+        #return '%s<br />%s<br />%s<br />%s<br />%s<br />%s<br />' % (interests, music, books, movies, albums, television)
         
     def process(self):
         # get an event for the user and return it as an HTML partial
