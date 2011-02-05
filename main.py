@@ -38,7 +38,7 @@ class User(db.Model):
         if self.location:
             return self.location
         else:
-            return 'Toronto'
+            return ''
 
 class UserEvent(db.Model):
     id = db.StringProperty(required=True)
@@ -61,11 +61,7 @@ class UserEvent(db.Model):
     
 class UserProfile(db.Expando):
     id = db.StringProperty(required=True)
-    # latitude
-    # longitude
-    # city
-    # country
-    # postal_code
+    # autolocation
     # interests = g.get_connections("me", "interests")
     # music = g.get_connections("me", "music")
     # books = g.get_connections("me", "books")
@@ -227,8 +223,15 @@ class AjaxSetLocationHandler(AjaxHandler):
     def process(self):
         # TODO process GET params: latitude, longitude, city, country, postal_code
         # set in UserProfile
-        self.response.out.write(simplejson.dumps({ }))
-
+        error = self.request.get("error")
+        if error == '0':
+            latitude = self.request.get("latitude")
+            longitude = self.request.get("longitude")
+            if self.current_user.get_location() != self.request.get("location"):
+                self.current_user.location = self.request.get("location")
+                self.current_user.put()
+        self.response.out.write(simplejson.dumps({'location':self.current_user.get_location()}))
+        
 def main():
     application = webapp.WSGIApplication([
                         ('/', IndexHandler),

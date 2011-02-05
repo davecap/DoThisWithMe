@@ -18,7 +18,11 @@
   <link rel="stylesheet" href="/static/css/ui-lightness/jquery-ui-1.8.7.custom.css?v=2">
 </head>
 
+{% if current_user %}
 <body onload="initGeolocation();">
+{% else %}
+<body>
+{% endif %}
     <div id="fb-root"></div>
     <script>
       window.fbAsyncInit = function() {
@@ -46,7 +50,7 @@
                 {% if current_user %}
                   <p><a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture?type=square"/></a></p>
                   <p>Hello, {{ current_user.name|escape }}</p>
-                  <p>Finding an event in: <span id="location">{{ current_user.location|escape }}</span></p>
+                  <p>Finding an event: <span id="location">...</span><a href="#" id="set-location">change</a></p>
                 {% endif %}
                 
                 <fb:login-button autologoutlink="true" perms="user_events,friends_events,user_interests,friends_interests,user_likes,friends_likes,user_location,read_friendlists"></fb:login-button>
@@ -93,7 +97,7 @@
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js"></script>
   <script>!window.jQuery && document.write(unescape('%3Cscript src="/static/js/libs/jquery-1.4.4.js"%3E%3C/script%3E'))</script>
   <script src="/static/js/libs/jquery-ui-1.8.7.custom.min.js"></script>
-  <script src="/static/js/plugins.js"></script>
+  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script> 
   
   {% if current_user %}
       <script type="text/javascript">
@@ -146,21 +150,40 @@
         
         function initGeolocation()
         {
-             if( navigator.geolocation )
-             {
-                  navigator.geolocation.getCurrentPosition(setLocation);
-             }
+            // Try W3C Geolocation method (Preferred)
+            if(navigator.geolocation) {
+                browserSupportFlag = true;
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+                    geocoder.geocode({'latLng': initialLocation}, function(results, status) {
+                        if (status == google.maps.GeocoderStatus.OK) {
+                            if (results[1]) {
+                                $.getJSON('/ajax/set_location', {error:'1', location:results[1], latitude:position.coords.latitude, longitude:position.coords.longitude}, function(data) {
+                                    $('#location').html(data.location);
+                                });
+                                return;
+                            }
+                        }                  
+                    });
+                });
+            }
+            
+            handleNoGeolocation(true);
+        }
+        
+        function handleNoGeolocation(errorFlag) {
+          if (errorFlag == true) {
+            initialLocation = newyork;
+            contentString = "Error: The Geolocation service failed.";
+          } else {
+            initialLocation = siberia;
+            contentString = "Error: Your browser doesn't support geolocation.";
+          }
+          $.getJSON('/ajax/set_location', {error:'1'}, function(data) {
+                  $('#location').html(data.location);
+          });
         }
 
-        function setLocation(position)
-        {
-            // $.getJSON('/ajax/set_location', {latitude:position.coords.latitude, longitude:position.coords.longitude, city:position.address.city, country:position.address.country, postal_code:position.address.postal_code}, function(data) {
-            //         alert("New Location!"+data);
-            //     });
-            $.getJSON('/ajax/set_location', {latitude:position.coords.latitude, longitude:position.coords.longitude}, function(data) {
-                    // TODO: update location span if we get something
-                });
-        }
       </script>
   {% endif %}
 
