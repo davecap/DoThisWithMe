@@ -155,7 +155,7 @@
                 browserSupportFlag = true;
                 navigator.geolocation.getCurrentPosition(function(position) {
                     var geocoder = new google.maps.Geocoder()
-                    initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+                    var initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
                     geocoder.geocode({'latLng': initialLocation}, function(results, status) {
                         if (status == google.maps.GeocoderStatus.OK) {
                             if (results[1]) {
