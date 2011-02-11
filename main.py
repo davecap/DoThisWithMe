@@ -33,7 +33,18 @@ class User(db.Model):
     picture = db.StringProperty(required=True)
     location = db.StringProperty()
     access_token = db.StringProperty()
+    profile = db.ReferenceProperty(UserProfile)
     
+    def get_or_create_profile(self, access_token=None):
+        if access_token is none:
+            access_token = self.access_token
+        
+        if self.profile is None:
+            self.profile = UserProfile()
+            self.profile.update(access_token)
+            self.profile.put()
+        return self.profile
+                
     def get_location(self):
         if self.location:
             return self.location
@@ -41,11 +52,10 @@ class User(db.Model):
             return ''
 
 class UserEvent(db.Model):
-    id = db.StringProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     updated = db.DateTimeProperty(auto_now=True)
     friend_ids = db.StringListProperty(default=[])
-    event_id = db.StringProperty(default=None)
+    eventful_id = db.StringProperty(default=None)
     
     # TODO: async?
     def add_friend(self, user_id):
@@ -58,17 +68,29 @@ class UserEvent(db.Model):
         if user_id in self.friend_ids:
             self.friend_ids.remove(user_id)
             self.put()
-    
+
+
 class UserProfile(db.Expando):
-    id = db.StringProperty(required=True)
-    # autolocation
-    # interests = g.get_connections("me", "interests")
-    # music = g.get_connections("me", "music")
-    # books = g.get_connections("me", "books")
-    # movies = g.get_connections("me", "movies")
-    # television = g.get_connections("me", "television")
-    # albums = g.get_connections("me", "albums")
-    # #likes = g.get_connections("me", "likes")
+    interests = db.StringListProperty()
+    music_genres = db.StringListProperty()
+    book_genres = db.StringListProperty()
+    book_authors = db.StringListProperty()
+    movie_genres = db.StringListProperty()
+    movie_directors = db.StringListProperty()
+    #food_types = db.StringListProperty()
+    updated = db.DateTimeProperty(auto_now=True)
+    
+    def update(self, access_token):
+        #g = facebook.GraphAPI(access_token)
+        #music = g.get_connections("me", "music")
+        #books = g.get_connections("me", "books")
+        #movies = g.get_connections("me", "movies")
+        #interests = g.get_connections("me", "interests")
+        #television = g.get_connections("me", "television")
+        #albums = g.get_connections("me", "albums")
+        ##likes = g.get_connections("me", "likes")
+        # TODO: process interests and convert to genres
+        return True
 
 # Controllers
 
@@ -153,8 +175,6 @@ class AjaxHandler(BaseHandler):
 class AjaxNextEventHandler(AjaxHandler):
     def get_user_info(self):
         # TODO: get and set UserProfile for the current_user and friends in the friend list
-        # TODO: get user location
-        # TODO: look up events!
         
         # # get or create the user profile by this ID
         # f_user_profile = UserProfile.get_by_key_name(f_id)
@@ -162,7 +182,9 @@ class AjaxNextEventHandler(AjaxHandler):
         #     # TODO
         #     pass
         
+    
         api = eventful.API('JSmFxgTgZ3kHsfTb')
+        # TODO: eventful query builder
         api_data = api.call('/events/search', q='music', l=self.current_user.get_location())
         try:
             events = api_data['events']['event']
@@ -170,16 +192,6 @@ class AjaxNextEventHandler(AjaxHandler):
             return "%s at %s" % (events[0]['title'], events[0]['venue_name'])
         except:
             return "Couldn't find any events"
-        
-        #g = facebook.GraphAPI(self.current_user.access_token)
-        #interests = g.get_connections("me", "interests")
-        #music = g.get_connections("me", "music")
-        #books = g.get_connections("me", "books")
-        #movies = g.get_connections("me", "movies")
-        #television = g.get_connections("me", "television")
-        #albums = g.get_connections("me", "albums")
-        ##likes = g.get_connections("me", "likes")
-        #return '%s<br />%s<br />%s<br />%s<br />%s<br />%s<br />' % (interests, music, books, movies, albums, television)
         
     def process(self):
         # get an event for the user and return it as an HTML partial
@@ -221,7 +233,8 @@ class AjaxAddFriendHandler(AjaxHandler):
        
 class AjaxSetLocationHandler(AjaxHandler):
     def process(self):
-        # TODO process GET params: latitude, longitude, city, country, postal_code
+        # TOD
+        O process GET params: latitude, longitude, city, country, postal_code
         # set in UserProfile
         error = self.request.get("error")
         if error == '0':

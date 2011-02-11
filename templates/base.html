@@ -154,6 +154,7 @@
             if(navigator.geolocation) {
                 browserSupportFlag = true;
                 navigator.geolocation.getCurrentPosition(function(position) {
+                    var geocoder = new google.maps.Geocoder()
                     initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
                     geocoder.geocode({'latLng': initialLocation}, function(results, status) {
                         if (status == google.maps.GeocoderStatus.OK) {
@@ -172,13 +173,13 @@
         }
         
         function handleNoGeolocation(errorFlag) {
-          if (errorFlag == true) {
-            initialLocation = newyork;
-            contentString = "Error: The Geolocation service failed.";
-          } else {
-            initialLocation = siberia;
-            contentString = "Error: Your browser doesn't support geolocation.";
-          }
+          // if (errorFlag == true) {
+          //   initialLocation = newyork;
+          //   contentString = "Error: The Geolocation service failed.";
+          // } else {
+          //   initialLocation = siberia;
+          //   contentString = "Error: Your browser doesn't support geolocation.";
+          // }
           $.getJSON('/ajax/set_location', {error:'1'}, function(data) {
                   $('#location').html(data.location);
           });
