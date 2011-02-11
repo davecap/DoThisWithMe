@@ -24,6 +24,28 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 # Models
 
+class UserProfile(db.Expando):
+    interests = db.StringListProperty()
+    music_genres = db.StringListProperty()
+    book_genres = db.StringListProperty()
+    book_authors = db.StringListProperty()
+    movie_genres = db.StringListProperty()
+    movie_directors = db.StringListProperty()
+    #food_types = db.StringListProperty()
+    updated = db.DateTimeProperty(auto_now=True)
+    
+    def update(self, access_token):
+        #g = facebook.GraphAPI(access_token)
+        #music = g.get_connections("me", "music")
+        #books = g.get_connections("me", "books")
+        #movies = g.get_connections("me", "movies")
+        #interests = g.get_connections("me", "interests")
+        #television = g.get_connections("me", "television")
+        #albums = g.get_connections("me", "albums")
+        ##likes = g.get_connections("me", "likes")
+        # TODO: process interests and convert to genres
+        return True
+
 class User(db.Model):
     id = db.StringProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
@@ -68,29 +90,6 @@ class UserEvent(db.Model):
         if user_id in self.friend_ids:
             self.friend_ids.remove(user_id)
             self.put()
-
-
-class UserProfile(db.Expando):
-    interests = db.StringListProperty()
-    music_genres = db.StringListProperty()
-    book_genres = db.StringListProperty()
-    book_authors = db.StringListProperty()
-    movie_genres = db.StringListProperty()
-    movie_directors = db.StringListProperty()
-    #food_types = db.StringListProperty()
-    updated = db.DateTimeProperty(auto_now=True)
-    
-    def update(self, access_token):
-        #g = facebook.GraphAPI(access_token)
-        #music = g.get_connections("me", "music")
-        #books = g.get_connections("me", "books")
-        #movies = g.get_connections("me", "movies")
-        #interests = g.get_connections("me", "interests")
-        #television = g.get_connections("me", "television")
-        #albums = g.get_connections("me", "albums")
-        ##likes = g.get_connections("me", "likes")
-        # TODO: process interests and convert to genres
-        return True
 
 # Controllers
 
@@ -233,9 +232,6 @@ class AjaxAddFriendHandler(AjaxHandler):
        
 class AjaxSetLocationHandler(AjaxHandler):
     def process(self):
-        # TOD
-        O process GET params: latitude, longitude, city, country, postal_code
-        # set in UserProfile
         error = self.request.get("error")
         if error == '0':
             latitude = self.request.get("latitude")
